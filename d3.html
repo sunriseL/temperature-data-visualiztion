@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+    .state{
+        fill: none;
+        stroke: #a9a9a9;
+        stroke-width: 1;
+    }
+    .state:hover{
+        fill-opacity:0.5;
+    }
+    #tooltip {
+        position: absolute;
+        text-align: center;
+        padding: 20px;
+        margin: 10px;
+        font: 12px sans-serif;
+        background: lightsteelblue;
+        border: 1px;
+        border-radius: 2px;
+        pointer-events: none;
+    }
+    #tooltip h4{
+        margin:0;
+        font-size:14px;
+    }
+    #tooltip{
+        background:rgba(0,0,0,0.9);
+        border:1px solid grey;
+        border-radius:5px;
+        font-size:12px;
+        width:auto;
+        padding:4px;
+        color:white;
+        opacity:0;
+    }
+    #tooltip table{
+        table-layout:fixed;
+    }
+    #tooltip tr td{
+        padding:0;
+        margin:0;
+    }
+    #tooltip tr td:nth-child(1){
+        width:50px;
+    }
+    #tooltip tr td:nth-child(2){
+        text-align:center;
+    }
+</style>
+<body>
+<div id="tooltip"></div><!-- div to hold tooltip. -->
+<svg width="560" height="470" id="statesvg"></svg> <!-- svg to hold the map. -->
+<script src="china-zh2.js"></script> <!-- creates uStates. -->
+<script src="d3.min.js"></script>
+<script>
+    function tooltipHtml(n, d, h){    /* function to create html content string in tooltip div. */
+        return "<h4>"+n+"</h4><table>"+
+        "<tr><td>hour:</td><td>"+h+"</td></tr>" +
+            "<tr><td>Temperature:</td><td>"+(d.tmp)+"</td></tr>"+
+            "</table>";
+    }
+
+    /*
+    function nextData(data){
+        ['JXI', 'LIA', 'TIB', 'NMG', 'SHH', 'CHQ', 'XIN', 'SHD', 'HEN', 'GUD', 'GUI', 'BEJ', 'MAC', 'TAJ', 'HLJ', 'HEB', 'ZHJ', 'ANH',
+         'GXI', 'HAI', 'JIL', 'SHX', 'HUN', 'YUN', 'FUJ', 'HUB', 'SHA', 'HKG', 'QIH', 'GAN', 'JSU', 'SCH', 'NXA', 'TAI']
+         .forEach(function(d)){
+             var tmp=Math.round(100*Math.random());
+             data[d]={tmp:tmp, color:d3.interpolate("#84fc55", "#800026")(tmp/100)};
+         }
+    }
+    */
+    //alert(123)
+    var dic = {"黑龙江省":"HLJ",
+                "内蒙古自治区":"NMG",
+                "吉林省":"JIL",
+                "新疆维吾尔自治区":"XIN",
+                "青海省":"QIH",
+                "甘肃省":"GAN",
+                "河北省":"HEB",
+                "山西省":"SHX",
+                "宁夏回族自治区":"NXA",
+                "陕西省":"SHA",
+                "河南省":"HEN",
+                "辽宁省":"LIA",
+                "北京市":"BEJ",
+                "天津市":"TAJ",
+                "山东省":"SHD",
+                "西藏自治区":"TIB",
+                "四川省":"SCH",
+                "云南省":"YUN",
+                "贵州省":"GUI",
+                "湖北省":"HUB",
+                "重庆市":"CHQ",
+                "湖南省":"HUN",
+                "江西省":"JXI",
+                "广西壮族自治区":"GXI",
+                "广东省":"GUD",
+                "江苏省":"JSU",
+                "安徽省":"ANH",
+                "上海市":"SHA",
+                "浙江省":"ZHJ",
+                "福建省":"FUJ",
+                "海南省":"HAI",
+            };
+
+
+    var sampleData =[{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}];    /* Sample random data. */
+    var tmp = {};
+    var hours = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22];
+
+    d3.json("1day_country.json",function(error,json){
+
+        var count = {};
+        var province = "";
+        for(hour in json){
+            tmp = {};
+            count = {};
+            //console.log(hour)
+            for(id in json[hour]["data"]){
+                var data = json[hour]["data"][id]
+                //console.log(data)
+                province = dic[data["station"]["province"]]
+                //console.log(province)
+                if(!count[province]){
+                    count[province] = 0
+                }
+                var t =  data["weather"].temperature
+                if (t == 9999) continue
+
+                count[province]++
+
+                if(!tmp[province]){
+                    tmp[province] = 0
+                }
+
+                //console.log("tmp:"+data["weather"]["temperarture"])
+                tmp[province] += t
+
+            }
+            var max = 0;
+            var min = 0;
+            for(i in tmp){
+                tmp[i] = tmp[i] / count[i]
+                if(tmp[i] < min) min = tmp[i]
+                if(tmp[i] > max) max = tmp[i]
+                //console.log(i+"temperarture:"+tmp[i])
+            }
+
+
+
+
+            ['JXI', 'LIA', 'TIB', 'NMG', 'SHH', 'CHQ', 'XIN', 'SHD', 'HEN', 'GUD', 'GUI', 'BEJ', 'MAC', 'TAJ', 'HLJ', 'HEB', 'ZHJ', 'ANH',
+             'GXI', 'HAI', 'JIL', 'SHX', 'HUN', 'YUN', 'FUJ', 'HUB', 'SHA', 'HKG', 'QIH', 'GAN', 'JSU', 'SCH', 'NXA', 'TAI']
+                .forEach(function(d2){
+                    //alert(d2)
+                    if(tmp[d2]){
+
+                        var tmpe= tmp[d2];
+                        //console.log("hour:"+hour + "  "+d2+ " "+tmpe)
+                        sampleData[hour][d2]={tmp:tmpe, color:d3.interpolate("#84fc55", "#800026")((tmpe - min)/(max - min))};
+                    }else{
+                        //console.log(d2)
+                        sampleData[hour][d2]={tmp:-10000, color:"#FFFFFF"};
+                    }
+                    //console.log(sampleData[0])
+                });
+        }
+        for(i in sampleData){
+            console.log(sampleData[i])
+        }
+        uStates.draw("#statesvg", sampleData, tooltipHtml,hours);
+    });
+    //console.log(sampleData[0])
+    /*
+
+</script>
+
+</body>
